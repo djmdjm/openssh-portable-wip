@@ -59,7 +59,7 @@ extern ServerOptions options;
 static int none_enabled = 1;
 
 static int
-userauth_none(struct ssh *ssh)
+userauth_none(struct ssh *ssh, const char *method)
 {
 	int r;
 
@@ -73,6 +73,7 @@ userauth_none(struct ssh *ssh)
 
 Authmethod method_none = {
 	"none",
+	NULL,
 	userauth_none,
 	&none_enabled
 };

@@ -44,7 +44,7 @@
 extern ServerOptions options;
 
 static int
-userauth_kbdint(struct ssh *ssh)
+userauth_kbdint(struct ssh *ssh, const char *method)
 {
 	int r, authenticated = 0;
 	char *lang, *devs;
@@ -66,6 +66,7 @@ userauth_kbdint(struct ssh *ssh)
 
 Authmethod method_kbdint = {
 	"keyboard-interactive",
+	NULL,
 	userauth_kbdint,
 	&options.kbd_interactive_authentication
 };

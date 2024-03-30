@@ -165,6 +165,9 @@
 
 #ifdef WITH_OPENSSL
 #include <openssl/opensslv.h> /* For OPENSSL_VERSION_NUMBER */
+#if defined(WITH_DSA) && defined(OPENSSL_IS_BORINGSSL)
+#undef WITH_DSA
+#endif
 #endif
 
 #include "defines.h"

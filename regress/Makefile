@@ -108,14 +108,14 @@ LTESTS= 	connect \
 		channel-timeout \
 		connection-timeout \
 		match-subsystem \
-		agent-pkcs11-restrict \
-		agent-pkcs11-cert
 
 INTEROP_TESTS=	putty-transfer putty-ciphers putty-kex conch-ciphers
 INTEROP_TESTS+=	dropbear-ciphers dropbear-kex
 #INTEROP_TESTS+=ssh-com ssh-com-client ssh-com-keygen ssh-com-sftp
 
-EXTRA_TESTS=	agent-pkcs11
+EXTRA_TESTS=	agent-pkcs11 \
+		agent-pkcs11-restrict \
+		agent-pkcs11-cert
 #EXTRA_TESTS+= 	cipher-speed
 
 USERNAME=		${LOGNAME}

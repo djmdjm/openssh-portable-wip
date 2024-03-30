@@ -177,7 +177,7 @@ mm_request_receive_expect(int sock, enum monitor_reqtype type, struct sshbuf *m)
 }
 
 #ifdef WITH_OPENSSL
-DH *
+EVP_PKEY *
 mm_choose_dh(int min, int nbits, int max)
 {
 	BIGNUM *p, *g;

@@ -212,7 +212,7 @@ sshkey_tests(void)
 	TEST_START("new/free KEY_DSA");
 	k1 = sshkey_new(KEY_DSA);
 	ASSERT_PTR_NE(k1, NULL);
-	ASSERT_PTR_NE(k1->pkey, NULL);
+	ASSERT_PTR_NE(k1->dsa, NULL);
 	sshkey_free(k1);
 	TEST_DONE();
 #endif

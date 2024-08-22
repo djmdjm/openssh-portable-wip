@@ -64,8 +64,7 @@
 #define	KEX_CURVE25519_SHA256_OLD	"curve25519-sha256@libssh.org"
 #define	KEX_SNTRUP761X25519_SHA512	"sntrup761x25519-sha512"
 #define	KEX_SNTRUP761X25519_SHA512_OLD	"sntrup761x25519-sha512@openssh.com"
-#define	KEX_MLKEM768X25519_SHA256	"mlkem768x25519-sha256@openssh.com"
->>>>>>> 235895c (Hybrid ML-KEM768 w/ X25519 KEX support)
+#define	KEX_MLKEM768X25519_SHA256	"mlkem768x25519-sha256"
 
 #define COMP_NONE	0
 #define COMP_DELAYED	2

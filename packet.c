@@ -128,6 +128,9 @@ struct session_state {
 	int connection_in;
 	int connection_out;
 
+	/* Caches whether the underlying connection is a socket */
+	int is_on_socket;
+
 	/* Protocol flags for the remote side. */
 	u_int remote_protocol_flags;
 
@@ -248,6 +251,7 @@ ssh_alloc_session_state(void)
 	TAILQ_INIT(&ssh->public_keys);
 	state->connection_in = -1;
 	state->connection_out = -1;
+	state->is_on_socket = -1;
 	state->max_packet_size = 32768;
 	state->packet_timeout_ms = -1;
 	state->p_send.packets = state->p_read.packets = 0;
@@ -323,10 +327,12 @@ ssh_packet_set_connection(struct ssh *ssh, int fd_in, int fd_out)
 	}
 	state->newkeys[MODE_IN] = state->newkeys[MODE_OUT] = NULL;
 	/*
-	 * Cache the IP address of the remote connection for use in error
-	 * messages that might be generated after the connection has closed.
+	 * Cache the IP address of the remote connection and whether it is on
+	 * a socket for use in error messages that might be generated after
+	 * the connection has closed and to avoid syscalls while sandboxed.
 	 */
 	(void)ssh_remote_ipaddr(ssh);
+	(void)ssh_packet_connection_is_on_socket(ssh);
 	return ssh;
 }
 
@@ -450,21 +456,26 @@ ssh_packet_connection_is_on_socket(struct ssh *ssh)
 	/* filedescriptors in and out are the same, so it's a socket */
 	if (state->connection_in == state->connection_out)
 		return 1;
+	if (state->is_on_socket != -1)
+		return state->is_on_socket;
+	state->is_on_socket = 0;
 	fromlen = sizeof(from);
 	memset(&from, 0, sizeof(from));
 	if (getpeername(state->connection_in, (struct sockaddr *)&from,
 	    &fromlen) == -1)
-		return 0;
+		goto out;
 	tolen = sizeof(to);
 	memset(&to, 0, sizeof(to));
 	if (getpeername(state->connection_out, (struct sockaddr *)&to,
 	    &tolen) == -1)
-		return 0;
+		goto out;
 	if (fromlen != tolen || memcmp(&from, &to, fromlen) != 0)
-		return 0;
+		goto out;
 	if (from.ss_family != AF_INET && from.ss_family != AF_INET6)
-		return 0;
-	return 1;
+		goto out;
+	state->is_on_socket = 1;
+ out:
+	return state->is_on_socket;
 }
 
 void

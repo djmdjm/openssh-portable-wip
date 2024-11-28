@@ -2370,19 +2370,22 @@ main(int ac, char **av)
 	/* Has the socket been provided via socket activation? */
 	if (agentsocket == NULL && ac == 0 && (d_flag || D_flag) &&
 	    (pidstr = getenv("LISTEN_PID")) != NULL &&
-	    (fdstr = getenv("LISTEN_FDS")) != NULL &&
-	    strcmp(fdstr, "1") == 0 && fcntl(3, F_GETFL) != -1) {
-		/* Socket activation; validate parent PID */
+	    (fdstr = getenv("LISTEN_FDS")) != NULL) {
+		if (strcmp(fdstr, "1") != 0) {
+			fatal("unexpected LISTEN_FDS contents "
+			    "(want: \"1\" got\"%s\"", fdstr);
+		}
+		if (fcntl(3, F_GETFL) == -1)
+			fatal("LISTEN_FDS set but fd 3 unavailable");
 		pid = (int)strtonum(pidstr, 1, INT_MAX, &errstr);
 		if (errstr != NULL)
-			debug("invalid LISTEN_PID: %s", errstr);
-		else if (pid != getppid())
-			debug("bad LISTEN_PID: %d vs ppid %d", pid, getppid());
-		else {
-			debug("using socket activation on fd=3");
-			sock = 3;
-		}
+			fatal("invalid LISTEN_PID: %s", errstr);
+		if (pid != getpid())
+			fatal("bad LISTEN_PID: %d vs pid %d", pid, getpid());
+		debug("using socket activation on fd=3");
+		sock = 3;
 	}
+
 	/* Otherwise, create private directory for agent socket */
 	if (sock == -1 && agentsocket == NULL) {
 		mktemp_proto(socket_dir, sizeof(socket_dir));

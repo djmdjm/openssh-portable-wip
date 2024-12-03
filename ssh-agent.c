@@ -2387,18 +2387,21 @@ main(int ac, char **av)
 	}
 
 	/* Otherwise, create private directory for agent socket */
-	if (sock == -1 && agentsocket == NULL) {
-		mktemp_proto(socket_dir, sizeof(socket_dir));
-		if (mkdtemp(socket_dir) == NULL) {
-			perror("mkdtemp: private socket dir");
-			exit(1);
-		}
-		snprintf(socket_name, sizeof socket_name, "%s/agent.%ld", socket_dir,
+	if (sock == -1) {
+		if (agentsocket == NULL) {
+			mktemp_proto(socket_dir, sizeof(socket_dir));
+			if (mkdtemp(socket_dir) == NULL) {
+				perror("mkdtemp: private socket dir");
+				exit(1);
+			}
+			snprintf(socket_name, sizeof socket_name,
+			   "%s/agent.%ld", socket_dir,
 		    (long)parent_pid);
-	} else {
-		/* Try to use specified agent socket */
-		socket_dir[0] = '\0';
-		strlcpy(socket_name, agentsocket, sizeof socket_name);
+		} else {
+			/* Try to use specified agent socket */
+			socket_dir[0] = '\0';
+			strlcpy(socket_name, agentsocket, sizeof socket_name);
+		}
 	}
 
 	closefrom(sock == -1 ? STDERR_FILENO + 1 : sock + 1);

@@ -948,7 +948,7 @@ int main(void) { if (NSVersionOfRunTimeLibrary("System") >= (60 << 16))
 			fi
 		],
 	)
-
+	AC_DEFINE([USE_SYSTEMD_SOCKET_ACTIVATION], [1], [Attempt systemd-style socket activation in sshd])
 	AC_DEFINE([SYSTEMD_NOTIFY], [1], [Have sshd notify systemd on start/reload])
 	inet6_default_4in6=yes
 	case `uname -r` in

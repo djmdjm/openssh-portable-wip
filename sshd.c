@@ -121,8 +121,8 @@ static int saved_argc;
  * The sockets that the server is listening; this is used in the SIGHUP
  * signal handler.
  */
-#define	MAX_LISTEN_SOCKS	16
-static int listen_socks[MAX_LISTEN_SOCKS];
+#define	MAX_LISTEN_SOCKS	1024
+static int *listen_socks;
 static int num_listen_socks = 0;
 
 /*
@@ -863,6 +863,8 @@ listen_on_addrs(struct listenaddr *la)
 			close(listen_sock);
 			continue;
 		}
+		listen_socks = xrecallocarray(listen_socks, num_listen_socks,
+		    num_listen_socks + 1, sizeof(*listen_socks));
 		listen_socks[num_listen_socks] = listen_sock;
 		num_listen_socks++;
 
@@ -880,7 +882,7 @@ listen_on_addrs(struct listenaddr *la)
 static void
 server_listen(void)
 {
-	u_int i;
+	u_int i, did_socket_activation = 0;
 
 	/* Initialise per-source limit tracking. */
 	srclimit_init(options.max_startups,
@@ -890,8 +892,16 @@ server_listen(void)
 	    &options.per_source_penalty,
 	    options.per_source_penalty_exempt);
 
+	/*
+	 * If we received sockets from socket activation, we still need
+	 * to clean up options.listen_addrs
+	 */
+	if (num_listen_socks != 0)
+		did_socket_activation = 1;
+
 	for (i = 0; i < options.num_listen_addrs; i++) {
-		listen_on_addrs(&options.listen_addrs[i]);
+		if (!did_socket_activation)
+			listen_on_addrs(&options.listen_addrs[i]);
 		freeaddrinfo(options.listen_addrs[i].addrs);
 		free(options.listen_addrs[i].rdomain);
 		memset(&options.listen_addrs[i], 0,
@@ -1301,6 +1311,7 @@ main(int ac, char **av)
 	int sock_in = -1, sock_out = -1, newsock = -1, rexec_argc = 0;
 	int devnull, config_s[2] = { -1 , -1 }, have_connection_info = 0;
 	int need_chroot = 1;
+	int try_socket_activation = 0;
 	char *args, *fp, *line, *logfile = NULL, **rexec_argv = NULL;
 	struct stat sb;
 	u_int i, j;
@@ -1346,7 +1357,7 @@ main(int ac, char **av)
 	/* Parse command-line arguments. */
 	args = argv_assemble(ac, av); /* logged later */
 	while ((opt = getopt(ac, av,
-	    "C:E:b:c:f:g:h:k:o:p:u:46DGQRTdeiqrtV")) != -1) {
+	    "C:E:b:c:f:g:h:k:o:p:u:A46DGQRTdeiqrtV")) != -1) {
 		switch (opt) {
 		case '4':
 			options.address_family = AF_INET;
@@ -1356,6 +1367,10 @@ main(int ac, char **av)
 			break;
 		case 'f':
 			config_file_name = optarg;
+			break;
+		case 'A':
+			try_socket_activation = 1;
+			no_daemon_flag = 1;
 			break;
 		case 'c':
 			servconf_add_hostcert("[command-line]", 0,
@@ -1461,7 +1476,23 @@ main(int ac, char **av)
 	if (!test_flag && !inetd_flag && !do_dump_cfg && !path_absolute(av[0]))
 		fatal("sshd requires execution with an absolute path");
 
-	closefrom(STDERR_FILENO + 1);
+	/* Allow debug logging early to stderr if requested on commandline */
+	log_init(__progname, options.log_level == SYSLOG_LEVEL_NOT_SET ?
+	    SYSLOG_LEVEL_INFO : options.log_level, SYSLOG_FACILITY_AUTH, 1);
+
+	if (try_socket_activation) {
+		if (inetd_flag) {
+			fatal("socket activation is not compatible with "
+			    "inetd mode");
+		}
+		if ((r = platform_socket_activation(&listen_socks,
+		    &num_listen_socks, MAX_LISTEN_SOCKS)) <= 0)
+			fatal("socket activation failed");
+		closefrom(r + 1);
+	} else {
+		/* normal case: sshd will listen on its own sockets */
+		closefrom(STDERR_FILENO + 1);
+	}
 
 	/* Reserve fds we'll need later for reexec things */
 	if ((devnull = open(_PATH_DEVNULL, O_RDWR)) == -1)

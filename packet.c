@@ -128,6 +128,9 @@ struct session_state {
 	int connection_in;
 	int connection_out;
 
+	/* Caches whether the underlying connection is a socket */
+	int is_on_socket;
+
 	/* Protocol flags for the remote side. */
 	u_int remote_protocol_flags;
 
@@ -219,6 +222,9 @@ struct session_state {
 	/* One-off warning about weak ciphers */
 	int cipher_warning_done;
 
+	/* Last observed TCP receive window size */
+	int tcp_rwin;
+
 	/* Hook for fuzzing inbound packets */
 	ssh_packet_hook_fn *hook_in;
 	void *hook_in_ctx;
@@ -245,9 +251,11 @@ ssh_alloc_session_state(void)
 	TAILQ_INIT(&ssh->public_keys);
 	state->connection_in = -1;
 	state->connection_out = -1;
+	state->is_on_socket = -1;
 	state->max_packet_size = 32768;
 	state->packet_timeout_ms = -1;
 	state->p_send.packets = state->p_read.packets = 0;
+	state->tcp_rwin = -1;
 	state->initialized = 1;
 	/*
 	 * ssh_packet_send2() needs to queue packets until
@@ -319,10 +327,12 @@ ssh_packet_set_connection(struct ssh *ssh, int fd_in, int fd_out)
 	}
 	state->newkeys[MODE_IN] = state->newkeys[MODE_OUT] = NULL;
 	/*
-	 * Cache the IP address of the remote connection for use in error
-	 * messages that might be generated after the connection has closed.
+	 * Cache the IP address of the remote connection and whether it is on
+	 * a socket for use in error messages that might be generated after
+	 * the connection has closed and to avoid syscalls while sandboxed.
 	 */
 	(void)ssh_remote_ipaddr(ssh);
+	(void)ssh_packet_connection_is_on_socket(ssh);
 	return ssh;
 }
 
@@ -446,21 +456,26 @@ ssh_packet_connection_is_on_socket(struct ssh *ssh)
 	/* filedescriptors in and out are the same, so it's a socket */
 	if (state->connection_in == state->connection_out)
 		return 1;
+	if (state->is_on_socket != -1)
+		return state->is_on_socket;
+	state->is_on_socket = 0;
 	fromlen = sizeof(from);
 	memset(&from, 0, sizeof(from));
 	if (getpeername(state->connection_in, (struct sockaddr *)&from,
 	    &fromlen) == -1)
-		return 0;
+		goto out;
 	tolen = sizeof(to);
 	memset(&to, 0, sizeof(to));
 	if (getpeername(state->connection_out, (struct sockaddr *)&to,
 	    &tolen) == -1)
-		return 0;
+		goto out;
 	if (fromlen != tolen || memcmp(&from, &to, fromlen) != 0)
-		return 0;
+		goto out;
 	if (from.ss_family != AF_INET && from.ss_family != AF_INET6)
-		return 0;
-	return 1;
+		goto out;
+	state->is_on_socket = 1;
+ out:
+	return state->is_on_socket;
 }
 
 void
@@ -666,6 +681,37 @@ ssh_packet_rdomain_in(struct ssh *ssh)
 		return NULL;
 	ssh->rdomain_in = get_rdomain(ssh->state->connection_in);
 	return ssh->rdomain_in;
+}
+
+static void
+ssh_packet_update_tcp_rwin(struct ssh *ssh)
+{
+	int rwin;
+	socklen_t len = sizeof(rwin);
+
+	if (ssh->state == NULL ||
+	    !ssh_packet_connection_is_on_socket(ssh))
+		return;
+	if (getsockopt(ssh->state->connection_in, SOL_SOCKET, SO_RCVBUF,
+	    &rwin, &len) != 0) {
+		debug_f("getsockopt(%d SO_RCVBUF): %s",
+		    ssh->state->connection_in, strerror(errno));
+		return;
+	}
+	if (ssh->state->tcp_rwin != -1 && rwin != ssh->state->tcp_rwin) {
+		debug3_f("TCP receive window %d -> %d (%+d)",
+		    ssh->state->tcp_rwin, rwin, rwin - ssh->state->tcp_rwin);
+	}
+	ssh->state->tcp_rwin = rwin;
+}
+
+int
+ssh_packet_get_tcp_rwin(struct ssh *ssh)
+{
+	if (ssh == NULL || ssh->state == NULL ||
+	    !ssh_packet_connection_is_on_socket(ssh))
+		return -1;
+	return ssh->state->tcp_rwin;
 }
 
 /* Closes the connection and clears and frees internal data structures. */
@@ -1500,6 +1546,8 @@ ssh_packet_read_seqnr(struct ssh *ssh, u_char *typep, u_int32_t *seqnr_p)
 		/* Append it to the buffer. */
 		if ((r = ssh_packet_process_incoming(ssh, buf, len)) != 0)
 			goto out;
+
+		ssh_packet_update_tcp_rwin(ssh);
 	}
  out:
 	return r;
@@ -1924,6 +1972,7 @@ ssh_packet_process_read(struct ssh *ssh, int fd)
 
 	if ((r = sshbuf_read(fd, state->input, PACKET_MAX_SIZE, &rlen)) != 0)
 		return r;
+	ssh_packet_update_tcp_rwin(ssh);
 
 	if (state->packet_discard) {
 		if ((r = sshbuf_consume_end(state->input, rlen)) != 0)

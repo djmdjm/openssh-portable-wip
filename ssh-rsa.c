@@ -410,7 +410,6 @@ ssh_rsa_sign(struct sshkey *key,
 	size_t diff, len = 0;
 	int slen = 0;
 	int hash_alg, ret = SSH_ERR_INTERNAL_ERROR;
-	struct sshbuf *b = NULL;
 
 	if (lenp != NULL)
 		*lenp = 0;
@@ -442,8 +441,31 @@ ssh_rsa_sign(struct sshkey *key,
 		ret = SSH_ERR_INTERNAL_ERROR;
 		goto out;
 	}
+	if ((ret = ssh_rsa_encode_store_sig(hash_alg, sig, slen,
+	    sigp, lenp)) != 0)
+		goto out;
 
-	/* encode signature */
+	/* success */
+	ret = 0;
+ out:
+	freezero(sig, slen);
+	return ret;
+}
+
+int
+ssh_rsa_encode_store_sig(int hash_alg, const u_char *sig, size_t slen,
+    u_char **sigp, size_t *lenp)
+{
+	struct sshbuf *b = NULL;
+	int ret = SSH_ERR_INTERNAL_ERROR;
+	size_t len;
+
+	if (lenp != NULL)
+		*lenp = 0;
+	if (sigp != NULL)
+		*sigp = NULL;
+
+	/* Encode signature */
 	if ((b = sshbuf_new()) == NULL) {
 		ret = SSH_ERR_ALLOC_FAIL;
 		goto out;
@@ -453,6 +475,8 @@ ssh_rsa_sign(struct sshkey *key,
 	    (ret = sshbuf_put_string(b, sig, slen)) != 0)
 		goto out;
 	len = sshbuf_len(b);
+
+	/* Store signature */
 	if (sigp != NULL) {
 		if ((*sigp = malloc(len)) == NULL) {
 			ret = SSH_ERR_ALLOC_FAIL;
@@ -464,7 +488,6 @@ ssh_rsa_sign(struct sshkey *key,
 		*lenp = len;
 	ret = 0;
  out:
-	freezero(sig, slen);
 	sshbuf_free(b);
 	return ret;
 }

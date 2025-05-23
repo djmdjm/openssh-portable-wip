@@ -88,7 +88,7 @@ null_empty(char **s)
 	*s = NULL;
 }
 
-/* stub */
+/* stubs */
 int
 pkcs11_sign(struct sshkey *key,
     u_char **sigp, size_t *lenp,
@@ -97,6 +97,11 @@ pkcs11_sign(struct sshkey *key,
     const char *sk_pin, u_int compat)
 {
 	return SSH_ERR_INTERNAL_ERROR;
+}
+
+void
+pkcs11_key_free(struct sshkey *key)
+{
 }
 
 static struct sshbuf *

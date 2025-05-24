@@ -46,8 +46,6 @@
 
 #ifdef WITH_OPENSSL
 #include <openssl/evp.h>
-#include <openssl/ec.h>
-#include <openssl/rsa.h>
 
 /* borrows code from sftp-server and ssh-agent */
 
@@ -321,19 +319,6 @@ main(int argc, char **argv)
 	}
 }
 
-#else /* WITH_OPENSSL */
-void
-cleanup_exit(int i)
-{
-	_exit(i);
-}
-
-int
-main(int argc, char **argv)
-{
-	fprintf(stderr, "PKCS#11 code is not enabled\n");
-	return 1;
-}
 #endif /* WITH_OPENSSL */
 #else /* ENABLE_PKCS11 */
 int

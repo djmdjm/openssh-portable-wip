@@ -878,13 +878,16 @@ main(int ac, char **av)
 
 	/* Parse command-line arguments. */
 	while ((opt = getopt(ac, av,
-	    "C:E:b:c:f:g:h:k:o:p:u:46DGQRTdeiqrtV")) != -1) {
+	    "C:E:b:c:f:g:h:k:o:p:u:46ADGQRTdeiqrtV")) != -1) {
 		switch (opt) {
 		case '4':
 			options.address_family = AF_INET;
 			break;
 		case '6':
 			options.address_family = AF_INET6;
+			break;
+		case 'A':
+			/* ignore */
 			break;
 		case 'f':
 			config_file_name = optarg;

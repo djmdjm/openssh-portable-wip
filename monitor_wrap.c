@@ -319,6 +319,17 @@ mm_decode_activate_server_options(struct ssh *ssh, struct sshbuf *m)
 	log_verbose_reset();
 	for (i = 0; i < options.num_log_verbose; i++)
 		log_verbose_add(options.log_verbose[i]);
+
+	/* use the macro hell to clean up too */
+#define M_CP_STROPT(x) free(newopts->x)
+#define M_CP_STRARRAYOPT(x, nx) do { \
+		for (i = 0; i < newopts->nx; i++) \
+			free(newopts->x[i]); \
+		free(newopts->x); \
+	} while (0)
+	COPY_MATCH_STRING_OPTS();
+#undef M_CP_STROPT
+#undef M_CP_STRARRAYOPT
 	free(newopts);
 }
 

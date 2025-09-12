@@ -1859,11 +1859,13 @@ do_ca_sign(struct passwd *pw, const char *ca_key_path, int prefer_agent,
 
 		sshkey_free(public);
 		free(out);
+		free(comment);
 		if (cert_serial_autoinc)
 			cert_serial++;
 	}
 	if (pin != NULL)
 		freezero(pin, strlen(pin));
+	sshkey_free(ca);
 	free(ca_fp);
 #ifdef ENABLE_PKCS11
 	pkcs11_terminate();

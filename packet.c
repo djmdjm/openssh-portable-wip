@@ -682,6 +682,7 @@ ssh_packet_close_internal(struct ssh *ssh, int do_close)
 {
 	struct session_state *state = ssh->state;
 	u_int mode;
+	struct packet *p;
 
 	if (!state->initialized)
 		return;
@@ -698,6 +699,11 @@ ssh_packet_close_internal(struct ssh *ssh, int do_close)
 	sshbuf_free(state->output);
 	sshbuf_free(state->outgoing_packet);
 	sshbuf_free(state->incoming_packet);
+	while ((p = TAILQ_FIRST(&state->outgoing))) {
+		sshbuf_free(p->payload);
+		TAILQ_REMOVE(&state->outgoing, p, next);
+		free(p);
+	}
 	for (mode = 0; mode < MODE_MAX; mode++) {
 		kex_free_newkeys(state->newkeys[mode]);	/* current keys */
 		state->newkeys[mode] = NULL;

@@ -601,6 +601,14 @@ sftp_init(int fd_in, int fd_out, u_int transfer_buflen, u_int num_requests,
 	return ret;
 }
 
+void
+sftp_free(struct sftp_conn *conn)
+{
+	if (conn == NULL)
+		return;
+	freezero(conn, sizeof(*conn));
+}
+
 u_int
 sftp_proto_version(struct sftp_conn *conn)
 {

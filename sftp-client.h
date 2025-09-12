@@ -71,6 +71,7 @@ struct sftp_limits {
  * a pointer to a initialized sftp_conn struct on success.
  */
 struct sftp_conn *sftp_init(int, int, u_int, u_int, u_int64_t);
+void sftp_free(struct sftp_conn *);
 
 u_int sftp_proto_version(struct sftp_conn *);
 

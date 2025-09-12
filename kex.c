@@ -740,6 +740,7 @@ kex_free(struct kex *kex)
 	free(kex->failed_choice);
 	free(kex->hostkey_alg);
 	free(kex->name);
+	free(kex->server_sig_algs);
 	free(kex);
 }
 

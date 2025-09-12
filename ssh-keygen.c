@@ -533,6 +533,7 @@ do_convert_private_ssh2(struct sshbuf *b)
 		if ((r = ssh_rsa_complete_crt_parameters(rsa_d, rsa_p, rsa_q,
 		    rsa_iqmp, &rsa_dmp1, &rsa_dmq1)) != 0)
 			fatal_fr(r, "generate RSA CRT parameters");
+		EVP_PKEY_free(key->pkey);
 		if ((key->pkey = EVP_PKEY_new()) == NULL)
 			fatal_f("EVP_PKEY_new failed");
 		if ((rsa = RSA_new()) == NULL)
@@ -3288,7 +3289,7 @@ main(int argc, char **argv)
 {
 	char comment[1024], *passphrase = NULL;
 	char *rr_hostname = NULL, *ep, *fp, *ra;
-	struct sshkey *private, *public;
+	struct sshkey *private = NULL, *public = NULL;
 	struct passwd *pw;
 	int r, opt, type;
 	int change_passphrase = 0, change_comment = 0, show_cert = 0;
@@ -3733,16 +3734,16 @@ main(int argc, char **argv)
 	}
 	if (do_gen_candidates) {
 		do_moduli_gen(argv[0], opts, nopts);
-		return 0;
+		goto done;
 	}
 	if (do_screen_candidates) {
 		do_moduli_screen(argv[0], opts, nopts);
-		return 0;
+		goto done;
 	}
 
 	if (gen_all_hostkeys) {
 		do_gen_all_hostkeys(pw);
-		return (0);
+		goto done;
 	}
 
 	if (key_type_name == NULL)
@@ -3899,8 +3900,9 @@ main(int argc, char **argv)
 	if (sk_attestation_path != NULL)
 		save_attestation(attest, sk_attestation_path);
 
+ done:
 	sshbuf_free(attest);
 	sshkey_free(public);
-
+	pwfree(pw);
 	exit(0);
 }

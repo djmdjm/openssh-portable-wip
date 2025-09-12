@@ -1869,7 +1869,9 @@ main(int ac, char **av)
  skip_connect:
 	exit_status = ssh_session2(ssh, cinfo);
 	ssh_conn_info_free(cinfo);
-	ssh_packet_close(ssh);
+	channel_free_channels(ssh);
+	ssh_packet_free(ssh);
+	pwfree(pw);
 
 	if (options.control_path != NULL && muxserver_sock != -1)
 		unlink(options.control_path);

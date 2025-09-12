@@ -1725,8 +1725,6 @@ main(int ac, char **av)
 	    &timeout_ms, options.tcp_keep_alive) != 0)
 		exit(255);
 
-	if (addrs != NULL)
-		freeaddrinfo(addrs);
 
 	ssh_packet_set_timeout(ssh, options.server_alive_interval,
 	    options.server_alive_count_max);
@@ -1867,6 +1865,8 @@ main(int ac, char **av)
 #endif
 
  skip_connect:
+	if (addrs != NULL)
+		freeaddrinfo(addrs);
 	exit_status = ssh_session2(ssh, cinfo);
 	ssh_conn_info_free(cinfo);
 	channel_free_channels(ssh);

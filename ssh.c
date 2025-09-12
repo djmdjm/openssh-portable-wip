@@ -2468,6 +2468,7 @@ load_public_identity_files(const struct ssh_conn_info *cinfo)
 			free(cp);
 			continue;
 		}
+		free(cp);
 		/* NB. leave filename pointing to private key */
 		identity_files[n_ids] = xstrdup(filename);
 		identity_keys[n_ids] = public;

@@ -753,6 +753,13 @@ ssh_packet_close_internal(struct ssh *ssh, int do_close)
 }
 
 void
+ssh_packet_free(struct ssh *ssh)
+{
+	ssh_packet_close_internal(ssh, 1);
+	freezero(ssh, sizeof(*ssh));
+}
+
+void
 ssh_packet_close(struct ssh *ssh)
 {
 	ssh_packet_close_internal(ssh, 1);

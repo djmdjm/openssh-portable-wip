@@ -665,6 +665,18 @@ stringlist_append(char ***listp, const char *s)
 }
 
 static void
+stringlist_free(char **list)
+{
+	size_t i = 0;
+
+	if (list == NULL)
+		return;
+	for (i = 0; list[i] != NULL; i++)
+		free(list[i]);
+	free(list);
+}
+
+static void
 parse_dest_constraint_hop(const char *s, struct dest_constraint_hop *dch,
     char **hostkey_files)
 {
@@ -1016,6 +1028,8 @@ main(int argc, char **argv)
 	}
 done:
 	clear_pass();
+	stringlist_free(hostkey_files);
+	stringlist_free(dest_constraint_strings);
 	ssh_close_authentication_socket(agent_fd);
 	return ret;
 }

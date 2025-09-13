@@ -677,6 +677,35 @@ stringlist_free(char **list)
 }
 
 static void
+free_dest_constraint_hop(struct dest_constraint_hop *dch)
+{
+	u_int i;
+
+	if (dch == NULL)
+		return;
+	free(dch->user);
+	free(dch->hostname);
+	for (i = 0; i < dch->nkeys; i++)
+		sshkey_free(dch->keys[i]);
+	free(dch->keys);
+	free(dch->key_is_ca);
+}
+
+static void
+free_dest_constraints(struct dest_constraint **dcs, size_t ndcs)
+{
+	size_t i;
+
+	for (i = 0; i < ndcs; i++) {
+		free_dest_constraint_hop(&dcs[i]->from);
+		free_dest_constraint_hop(&dcs[i]->to);
+		free(dcs[i]);
+	}
+	free(dcs);
+}
+
+
+static void
 parse_dest_constraint_hop(const char *s, struct dest_constraint_hop *dch,
     char **hostkey_files)
 {
@@ -1033,6 +1062,7 @@ done:
 	clear_pass();
 	stringlist_free(hostkey_files);
 	stringlist_free(dest_constraint_strings);
+	free_dest_constraints(dest_constraints, ndest_constraints);
 	ssh_close_authentication_socket(agent_fd);
 	return ret;
 }

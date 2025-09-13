@@ -981,6 +981,9 @@ main(int argc, char **argv)
 		    dest_constraints, ndest_constraints,
 		    certs, ncerts) == -1)
 			ret = 1;
+		for (i = 0; i < (int)ncerts; i++)
+			sshkey_free(certs[i]);
+		free(certs);
 		goto done;
 	}
 	if (do_download) {

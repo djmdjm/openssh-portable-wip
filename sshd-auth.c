@@ -773,6 +773,7 @@ main(int ac, char **av)
 	 * The unprivileged child now transfers the current keystate and exits.
 	 */
 	mm_send_keystate(ssh, pmonitor);
+	sshauthopt_free(auth_opts);
 	ssh_packet_clear_keys(ssh);
 	exit(0);
 }

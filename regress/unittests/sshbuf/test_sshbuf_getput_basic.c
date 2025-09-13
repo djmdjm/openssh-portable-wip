@@ -609,6 +609,7 @@ sshbuf_getput_basic_tests(void)
 	ASSERT_PTR_NE(s2, NULL);
 	ASSERT_STRING_EQ(s2, "00000000000000000000");
 	sshbuf_free(p1);
+	free(s2);
 	TEST_DONE();
 
 	TEST_START("sshbuf_poke_u16");
@@ -643,6 +644,7 @@ sshbuf_getput_basic_tests(void)
 	ASSERT_PTR_NE(s2, NULL);
 	ASSERT_STRING_EQ(s2, "00000000000000000000");
 	sshbuf_free(p1);
+	free(s2);
 	TEST_DONE();
 
 	TEST_START("sshbuf_poke_u8");
@@ -673,6 +675,7 @@ sshbuf_getput_basic_tests(void)
 	ASSERT_PTR_NE(s2, NULL);
 	ASSERT_STRING_EQ(s2, "00000000000000000000");
 	sshbuf_free(p1);
+	free(s2);
 	TEST_DONE();
 
 	TEST_START("sshbuf_poke");
@@ -707,5 +710,6 @@ sshbuf_getput_basic_tests(void)
 	ASSERT_PTR_NE(s2, NULL);
 	ASSERT_STRING_EQ(s2, "00000000000000000000");
 	sshbuf_free(p1);
+	free(s2);
 	TEST_DONE();
 }

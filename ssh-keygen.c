@@ -2317,9 +2317,10 @@ update_krl_from_file(struct passwd *pw, const char *file, int wild_ca,
 			cp += 5;
 			cp = cp + strspn(cp, " \t");
 			hash_to_blob(cp, &blob, &blen, file, lnum);
-			r = ssh_krl_revoke_key_sha256(krl, blob, blen);
-			if (r != 0)
+			if ((r = ssh_krl_revoke_key_sha256(krl,
+			    blob, blen)) != 0)
 				fatal_fr(r, "revoke key failed");
+			free(blob);
 		} else {
 			if (strncasecmp(cp, "key:", 4) == 0) {
 				cp += 4;

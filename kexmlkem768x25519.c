@@ -43,7 +43,7 @@
 
 #ifdef USE_MLKEM768X25519
 
-#include "libcrux-mlkem-mldsa.h"
+#include "crypto_api.h"
 
 int
 kex_kem_mlkem768x25519_keypair(struct kex *kex)
@@ -58,7 +58,7 @@ kex_kem_mlkem768x25519_keypair(struct kex *kex)
 	need = MLKEM768_PUBLICKEYBYTES + CURVE25519_SIZE;
 	if ((r = sshbuf_reserve(buf, need, &cp)) != 0)
 		goto out;
-	if (mlkem768_keypair(cp, kex->mlkem768_client_key) != 0) {
+	if (crypto_kem_mlkem768_keypair(cp, kex->mlkem768_client_key) != 0) {
 		r = SSH_ERR_INTERNAL_ERROR;
 		goto out;
 	}
@@ -125,7 +125,7 @@ kex_kem_mlkem768x25519_enc(struct kex *kex,
 		goto out;
 	}
 	/* generate and encrypt KEM key with client key */
-	if (mlkem768_encapsulate(ct, shared_secret, client_pub) != 0) {
+	if (crypto_kem_mlkem768_enc(ct, shared_secret, client_pub) != 0) {
 		r = SSH_ERR_INTERNAL_ERROR;
 		goto out;
 	}
@@ -201,7 +201,7 @@ kex_kem_mlkem768x25519_dec(struct kex *kex,
 	    MLKEM768_CIPHERTEXTBYTES);
 	dump_digest("server public key c25519:", server_pub, CURVE25519_SIZE);
 #endif
-	if (mlkem768_decapsulate(shared_secret, ciphertext,
+	if (crypto_kem_mlkem768_dec(shared_secret, ciphertext,
 	    kex->mlkem768_client_key) != 0) {
 		r = SSH_ERR_INTERNAL_ERROR;
 		goto out;

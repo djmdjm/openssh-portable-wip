@@ -325,6 +325,8 @@ clean:	regressclean
 	rm -f regress/unittests/sshsig/test_sshsig$(EXEEXT)
 	rm -f regress/unittests/utf8/*.o
 	rm -f regress/unittests/utf8/test_utf8$(EXEEXT)
+	rm -f regress/unittests/crypto/*.o
+	rm -f regress/unittests/crypto/test_crypto$(EXEEXT)
 	rm -f regress/misc/sk-dummy/*.o
 	rm -f regress/misc/sk-dummy/*.lo
 	rm -f regress/misc/ssh-verify-attestation/ssh-verify-attestation$(EXEEXT)
@@ -364,6 +366,8 @@ distclean:	regressclean
 	rm -f regress/unittests/sshsig/test_sshsig
 	rm -f regress/unittests/utf8/*.o
 	rm -f regress/unittests/utf8/test_utf8
+	rm -f regress/unittests/crypto/*.o
+	rm -f regress/unittests/crypto/test_crypto
 	rm -f regress/misc/sk-dummy/*.o
 	rm -f regress/misc/sk-dummy/*.lo
 	rm -f regress/misc/sk-dummy/sk-dummy.so
@@ -718,6 +722,20 @@ regress/unittests/utf8/test_utf8$(EXEEXT): \
 	    regress/unittests/test_helper/libtest_helper.a \
 	    -lssh -lopenbsd-compat -lssh -lopenbsd-compat $(TESTLIBS)
 
+UNITTESTS_TEST_CRYPTO_OBJS=\
+	regress/unittests/crypto/test_ed25519.o \
+	regress/unittests/crypto/test_mldsa.o \
+	regress/unittests/crypto/test_mldsa_eddsa.o \
+	regress/unittests/crypto/test_mlkem.o \
+	regress/unittests/crypto/tests.o \
+	$(P11OBJS) $(SKOBJS)
+
+regress/unittests/crypto/test_crypto$(EXEEXT): ${UNITTESTS_TEST_CRYPTO_OBJS} \
+    regress/unittests/test_helper/libtest_helper.a libssh.a
+	$(LD) -o $@ $(LDFLAGS) $(UNITTESTS_TEST_CRYPTO_OBJS) \
+	    regress/unittests/test_helper/libtest_helper.a \
+	    -lssh -lopenbsd-compat -lssh -lopenbsd-compat $(TESTLIBS)
+
 # These all need to be compiled -fPIC, so they are treated differently.
 SK_DUMMY_OBJS=\
 	regress/misc/sk-dummy/sk-dummy.lo \
@@ -763,7 +781,8 @@ regress-unit-binaries: regress-prep $(REGRESSLIBS) \
 	regress/unittests/sshbuf/test_sshbuf$(EXEEXT) \
 	regress/unittests/sshkey/test_sshkey$(EXEEXT) \
 	regress/unittests/sshsig/test_sshsig$(EXEEXT) \
-	regress/unittests/utf8/test_utf8$(EXEEXT)
+	regress/unittests/utf8/test_utf8$(EXEEXT) \
+	regress/unittests/crypto/test_crypto$(EXEEXT)
 
 tests:	file-tests t-exec interop-tests extra-tests unit
 	echo all tests passed

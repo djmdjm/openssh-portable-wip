@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "../test_helper/test_helper.h"
-#include "libcrux-mlkem-mldsa.h"
 #include "crypto_api.h"
 
 struct mldsa65_kat {
@@ -150,7 +149,7 @@ mldsa_tests(void)
 		hex2bin(expected_sk_hash, mldsa65_kats[i].sk_hash, 32);
 
 		/* Keypair generation */
-		ASSERT_INT_EQ(mldsa65_keypair_seeded(pk, sk, seed), 0);
+		ASSERT_INT_EQ(crypto_sign_mldsa65_keypair_seeded(pk, sk, seed), 0);
 
 		sha3_256(pk_hash, pk, sizeof(pk));
 		sha3_256(sk_hash, sk, sizeof(sk));
@@ -165,14 +164,14 @@ mldsa_tests(void)
 		hex2bin(expected_sig_hash, mldsa65_kats[i].sig_hash, 32);
 
 		/* Signing */
-		ASSERT_INT_EQ(mldsa65_sign_seeded(sig, msg,
+		ASSERT_INT_EQ(crypto_sign_mldsa65_seeded(sig, msg,
 		    msglen, NULL, 0, sk, rand), 0);
 
 		sha3_256(sig_hash, sig, sizeof(sig));
 		ASSERT_MEM_EQ(sig_hash, expected_sig_hash, 32);
 
 		/* Verification */
-		ASSERT_INT_EQ(mldsa65_verify(sig, msg,
+		ASSERT_INT_EQ(crypto_sign_mldsa65_verify(sig, msg,
 		    msglen, NULL, 0, pk), 0);
 		free(msg);
 	}

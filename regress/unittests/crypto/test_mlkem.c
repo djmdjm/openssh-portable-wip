@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "../test_helper/test_helper.h"
-#include "libcrux-mlkem-mldsa.h"
 #include "crypto_api.h"
 
 struct mlkem768_kat {
@@ -141,7 +140,7 @@ mlkem_tests(void)
 		hex2bin(expected_sk_hash, mlkem768_kats[i].sk_hash, 32);
 
 		/* Keypair generation */
-		ASSERT_INT_EQ(mlkem768_keypair_seeded(pk, sk, seed), 0);
+		ASSERT_INT_EQ(crypto_kem_mlkem768_keypair_seeded(pk, sk, seed), 0);
 
 		sha3_256(pk_hash, pk, sizeof(pk));
 		sha3_256(sk_hash, sk, sizeof(sk));
@@ -155,7 +154,7 @@ mlkem_tests(void)
 		    mlkem768_kats[i].shared_secret, 32);
 
 		/* Encapsulation */
-		ASSERT_INT_EQ(mlkem768_encapsulate_seeded(ct, shared_secret,
+		ASSERT_INT_EQ(crypto_kem_mlkem768_enc_seeded(ct, shared_secret,
 		    pk, enc_seed), 0);
 
 		sha3_256(ct_hash, ct, sizeof(ct));
@@ -163,7 +162,7 @@ mlkem_tests(void)
 		ASSERT_MEM_EQ(shared_secret, expected_shared_secret, 32);
 
 		/* Decapsulation */
-		ASSERT_INT_EQ(mlkem768_decapsulate(shared_secret2, ct, sk), 0);
+		ASSERT_INT_EQ(crypto_kem_mlkem768_dec(shared_secret2, ct, sk), 0);
 		ASSERT_MEM_EQ(shared_secret, shared_secret2, 32);
 	}
 	TEST_DONE();

@@ -21,6 +21,6 @@ SRCS+=digest-openssl.c ed25519-openssl.c
 #SRCS+=digest-libc.c ed25519.c
 
 run-regress-${PROG}: ${PROG}
-	env ${TEST_ENV} ./${PROG} ${UNITTEST_ARGS}
+	env ${TEST_ENV} ./${PROG} ${UNITTEST_ARGS} -d ${.CURDIR}/testdata
 
 .include <bsd.regress.mk>

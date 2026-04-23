@@ -17,6 +17,7 @@ for i in ${SSH_KEYTYPES}; do
 		ecdsa-sha2-nistp521)	ktypes="$ktypes ecdsa-521" ;;
 		sk-ssh-ed25519*)	ktypes="$ktypes ed25519-sk" ;;
 		sk-ecdsa-sha2-nistp256*) ktypes="$ktypes ecdsa-sk" ;;
+		ssh-mldsa65-ed25519*)	ktypes="$ktypes mldsa65-ed25519" ;;
 	esac
 done
 
@@ -25,8 +26,8 @@ for kt in $ktypes; do
 	xbits=`echo ${kt} | awk -F- '{print $2}'`
 	xtype=`echo ${kt}  | awk -F- '{print $1}'`
 	case "$kt" in
-	*sk)	type="$kt"; bits="n/a"; bits_arg="";;
-	*)	type=$xtype; bits=$xbits; bits_arg="-b $bits";;
+	mldsa65-ed25519|*sk) type="$kt"; bits="n/a"; bits_arg="";;
+	*) type=$xtype; bits=$xbits; bits_arg="-b $bits";;
 	esac
 	verbose "keygen $type, $bits bits"
 	${SSHKEYGEN} $bits_arg -q -N '' -t $type  -f $OBJ/key.$kt || \
@@ -42,6 +43,7 @@ kname_to_ktype() {
 	rsa-*)		echo rsa-sha2-512,rsa-sha2-256,ssh-rsa;;
 	ed25519-sk)	echo sk-ssh-ed25519@openssh.com;;
 	ecdsa-sk)	echo sk-ecdsa-sha2-nistp256@openssh.com;;
+	mldsa65-ed25519) echo ssh-mldsa65-ed25519@openssh.com ;;
 	esac
 }
 

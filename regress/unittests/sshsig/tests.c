@@ -113,6 +113,10 @@ tests(void)
 	check_sig("ed25519.pub", "ed25519.sig", msg, namespace);
 	TEST_DONE();
 
+	TEST_START("check MLDSA65-ED25519 signature");
+	check_sig("mldsa65-ed25519.pub", "mldsa65-ed25519.sig", msg, namespace);
+	TEST_DONE();
+
 #ifdef ENABLE_SK
 #if defined(WITH_OPENSSL) && defined(OPENSSL_HAS_ECC)
 	TEST_START("check ECDSA-SK signature");

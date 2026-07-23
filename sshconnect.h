@@ -91,6 +91,8 @@ void	 ssh_kex2(struct ssh *ssh, char *, struct sockaddr_storage *, u_short,
 void	 ssh_userauth2(struct ssh *ssh, const char *, const char *,
     char *, Sensitive *);
 
+void	 pubkey_dump(struct ssh *);
+
 int	 ssh_local_cmd(const char *);
 
 void	 maybe_add_key_to_agent(const char *, struct sshkey *,

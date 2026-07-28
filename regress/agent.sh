@@ -64,6 +64,7 @@ done
 # Remove explicit identity directives from ssh_proxy
 mv $OBJ/ssh_proxy $OBJ/ssh_proxy_bak
 grep -vi identityfile $OBJ/ssh_proxy_bak > $OBJ/ssh_proxy
+echo "MaxAuthTries 64" >> $OBJ/sshd_proxy
 
 ${SSHADD} -l > /dev/null 2>&1
 r=$?

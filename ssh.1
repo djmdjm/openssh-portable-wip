@@ -42,7 +42,7 @@
 .Nd OpenSSH remote login client
 .Sh SYNOPSIS
 .Nm ssh
-.Op Fl 46AaCfGgKkMNnqsTtVvXxYy
+.Op Fl 46AaCfGgKkMNnqsTtVvZXxYy
 .Op Fl B Ar bind_interface
 .Op Fl b Ar bind_address
 .Op Fl c Ar cipher_spec
@@ -781,6 +781,10 @@ Send log information using the
 .Xr syslog 3
 system module.
 By default this information is sent to stderr.
+.Pp
+.It Fl Z
+Dump the public keys that would be attempted for authentication to the specified
+destination in preferred order and exit.
 .El
 .Pp
 .Nm

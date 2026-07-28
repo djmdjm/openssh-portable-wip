@@ -87,6 +87,7 @@ LTESTS= 	connect \
 		kextype \
 		cert-hostkey \
 		cert-userkey \
+		pubkey-priority \
 		host-expand \
 		keys-command \
 		forward-control \

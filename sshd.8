@@ -43,7 +43,7 @@
 .Sh SYNOPSIS
 .Nm sshd
 .Bk -words
-.Op Fl 46DdeGiqTtV
+.Op Fl 46ADdeGiqTtV
 .Op Fl C Ar connection_spec
 .Op Fl c Ar host_certificate_file
 .Op Fl E Ar log_file
@@ -93,6 +93,16 @@ to use IPv4 addresses only.
 Forces
 .Nm
 to use IPv6 addresses only.
+.It Fl A
+Instruct
+.Nm
+to obtain its listening sockets from a parent supervising process via socket
+activation.
+The default behaviour is for
+.Nm
+to listen on the addresses specified by the
+.Cm ListenAddress
+directives in its configuration or, if none are specified, the wildcard address.
 .It Fl C Ar connection_spec
 Specify the connection parameters to use for the
 .Fl T

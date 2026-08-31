@@ -18,12 +18,15 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "log.h"
 #include "misc.h"
 #include "platform.h"
+#include "misc.h"
+#include "xmalloc.h"
 
 #include "openbsd-compat/openbsd-compat.h"
 
@@ -97,5 +100,50 @@ void platform_pre_session_start(void)
 	 * child connection is also protected against kcompactd.
 	 */
 	memlock_onfault_setup();
+#endif
+}
+
+int
+platform_socket_activation(int **socksp, int *num_socksp, int maxsocks)
+{
+#ifdef USE_SYSTEMD_SOCKET_ACTIVATION
+	const char *cp, *errstr;
+	int i, pid, nfds, fd, maxfd = -1;
+
+	if ((cp = getenv("LISTEN_PID")) == NULL)
+		return -1;
+
+	/* Validate $LISTEN_PID */
+	pid = (int)strtonum(cp, 1, INT_MAX, &errstr);
+	if (errstr != NULL)
+		fatal_f("invalid $LISTEN_PID contents: %s", errstr);
+	if (pid != getpid())
+		fatal_f("bad LISTEN_PID: %d vs pid %d", pid, getpid());
+
+	/* Capture $LISTEN_FDS sockets */
+	if ((cp = getenv("LISTEN_FDS")) == NULL)
+		fatal_f("cannot listen: LISTEN_PID set without LISTEN_FDS");
+	nfds = (int)strtonum(cp, 1, maxsocks, &errstr);
+	if (errstr != NULL)
+		fatal_f("invalid $LISTEN_FDS contents: %s", errstr);
+
+	for (i = 0; i < nfds; i++) {
+		fd = 3 + i;
+		debug_f("using fd %d", fd);
+		if (set_nonblock(fd) != 0)
+			fatal_f("cannot listen: bad file descriptor %d", fd);
+		if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
+			fatal_f("cannot listen: fcntl fd %d: %s", fd,
+			    strerror(errno));
+		}
+		*socksp = xrecallocarray(*socksp, *num_socksp, *num_socksp + 1,
+		    sizeof(**socksp));
+		(*socksp)[(*num_socksp)++] = fd;
+		maxfd = fd;
+	}
+	debug_f("%d sockets from socket activation", nfds);
+	return maxfd;
+#else
+	return -1;
 #endif
 }

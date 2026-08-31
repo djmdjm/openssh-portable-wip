@@ -97,6 +97,8 @@ if test -z "$AR" ; then
 	AC_MSG_ERROR([*** 'ar' missing, please install or fix your \$PATH ***])
 fi
 
+AC_DEFINE(CONFIG_H_INCLUDED, 1, [config.h has been included]) ]
+
 AC_PATH_PROG([PATH_PASSWD_PROG], [passwd])
 if test ! -z "$PATH_PASSWD_PROG" ; then
 	AC_DEFINE_UNQUOTED([_PATH_PASSWD_PROG], ["$PATH_PASSWD_PROG"],

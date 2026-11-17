@@ -392,6 +392,73 @@ sshkey_file_tests(void)
 
 	sshkey_free(k1);
 
+#ifdef WITH_OPENSSL
+	TEST_START("parse MLDSA87-P384 from private");
+	buf = load_file("mldsa87_p384_1");
+	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
+	sshbuf_free(buf);
+	ASSERT_PTR_NE(k1, NULL);
+	ASSERT_INT_EQ(k1->type, KEY_MLDSA87_P384);
+	TEST_DONE();
+
+	TEST_START("parse MLDSA87-P384 from private w/ passphrase");
+	buf = load_file("mldsa87_p384_1_pw");
+	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf,
+	    (const char *)sshbuf_ptr(pw), &k2, NULL), 0);
+	sshbuf_free(buf);
+	ASSERT_PTR_NE(k2, NULL);
+	ASSERT_INT_EQ(sshkey_equal(k1, k2), 1);
+	sshkey_free(k2);
+	TEST_DONE();
+
+	TEST_START("load MLDSA87-P384 from public");
+	ASSERT_INT_EQ(sshkey_load_public(
+	    test_data_file("mldsa87_p384_1.pub"), &k2, NULL), 0);
+	ASSERT_PTR_NE(k2, NULL);
+	ASSERT_INT_EQ(sshkey_equal(k1, k2), 1);
+	sshkey_free(k2);
+	TEST_DONE();
+
+	TEST_START("load MLDSA87-P384 cert");
+	ASSERT_INT_EQ(sshkey_load_cert(
+	    test_data_file("mldsa87_p384_1"), &k2), 0);
+	ASSERT_PTR_NE(k2, NULL);
+	ASSERT_INT_EQ(k2->type, KEY_MLDSA87_P384_CERT);
+	ASSERT_INT_EQ(sshkey_equal(k1, k2), 0);
+	ASSERT_INT_EQ(sshkey_equal_public(k1, k2), 1);
+	TEST_DONE();
+
+	TEST_START("MLDSA87-P384 key hex fingerprint");
+	buf = load_text_file("mldsa87_p384_1.fp");
+	cp = sshkey_fingerprint(k1, SSH_DIGEST_SHA256, SSH_FP_BASE64);
+	ASSERT_PTR_NE(cp, NULL);
+	ASSERT_STRING_EQ(cp, (const char *)sshbuf_ptr(buf));
+	sshbuf_free(buf);
+	free(cp);
+	TEST_DONE();
+
+	TEST_START("MLDSA87-P384 cert hex fingerprint");
+	buf = load_text_file("mldsa87_p384_1-cert.fp");
+	cp = sshkey_fingerprint(k2, SSH_DIGEST_SHA256, SSH_FP_BASE64);
+	ASSERT_PTR_NE(cp, NULL);
+	ASSERT_STRING_EQ(cp, (const char *)sshbuf_ptr(buf));
+	sshbuf_free(buf);
+	free(cp);
+	sshkey_free(k2);
+	TEST_DONE();
+
+	TEST_START("MLDSA87-P384 key bubblebabble fingerprint");
+	buf = load_text_file("mldsa87_p384_1.fp.bb");
+	cp = sshkey_fingerprint(k1, SSH_DIGEST_SHA1, SSH_FP_BUBBLEBABBLE);
+	ASSERT_PTR_NE(cp, NULL);
+	ASSERT_STRING_EQ(cp, (const char *)sshbuf_ptr(buf));
+	sshbuf_free(buf);
+	free(cp);
+	TEST_DONE();
+
+	sshkey_free(k1);
+#endif /* WITH_OPENSSL */
+
 #ifdef ENABLE_SK
 #if defined(WITH_OPENSSL)
 	TEST_START("parse ECDSA-SK from private");

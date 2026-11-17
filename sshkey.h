@@ -63,6 +63,8 @@ enum sshkey_types {
 	KEY_ED25519_SK_CERT,
 	KEY_MLDSA44_ED25519,
 	KEY_MLDSA44_ED25519_CERT,
+	KEY_MLDSA87_P384,
+	KEY_MLDSA87_P384_CERT,
 	KEY_UNSPEC
 };
 
@@ -123,6 +125,9 @@ struct sshkey {
 	/* KEY_MLDSA44_ED25519 */
 	u_char	*mldsa_ed25519_sk;
 	u_char	*mldsa_ed25519_pk;
+	/* KEY_MLDSA87_P384 */
+	u_char	*mldsa87_sk;
+	u_char	*mldsa87_pk;
 	/* KEY_ECDSA_SK and KEY_ED25519_SK */
 	char	*sk_application;
 	uint8_t	sk_flags;
@@ -306,6 +311,9 @@ int	ssh_ecdsa_encode_store_sig(const struct sshkey *,
 	    const BIGNUM *, const BIGNUM *, u_char **, size_t *);
 int	ssh_ed25519_encode_store_sig(const u_char *, size_t,
 	    u_char **, size_t *);
+int	ssh_mldsa_composite_m_prime(uint8_t **, size_t *,
+	    const char *, const uint8_t *, size_t,
+	    const uint8_t *, size_t);
 /* XXX should be internal, but used by ssh-keygen */
 int ssh_rsa_complete_crt_parameters(const BIGNUM *, const BIGNUM *,
     const BIGNUM *, const BIGNUM *, BIGNUM **, BIGNUM **);

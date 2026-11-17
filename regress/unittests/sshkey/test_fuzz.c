@@ -50,8 +50,10 @@ public_fuzz(struct sshkey *k)
 	u_int fuzzers = FUZZ_1_BIT_FLIP | FUZZ_1_BYTE_FLIP |
 	    FUZZ_TRUNCATE_START | FUZZ_TRUNCATE_END;
 
-	/* MLDSA44_ED25519 keys are large and slow to fuzz */
-	if (test_is_fast() || sshkey_type_plain(k->type) == KEY_MLDSA44_ED25519)
+	/* MLDSA composite keys are large and slow to fuzz */
+	if (test_is_fast() ||
+	    sshkey_type_plain(k->type) == KEY_MLDSA44_ED25519 ||
+	    sshkey_type_plain(k->type) == KEY_MLDSA87_P384)
 		fuzzers &= ~FUZZ_1_BIT_FLIP;
 	if (test_is_slow())
 		fuzzers |= FUZZ_2_BIT_FLIP | FUZZ_2_BYTE_FLIP;
@@ -80,8 +82,10 @@ sig_fuzz(struct sshkey *k, const char *sig_alg)
 	u_int fuzzers = FUZZ_1_BIT_FLIP | FUZZ_1_BYTE_FLIP | FUZZ_2_BYTE_FLIP |
 	    FUZZ_TRUNCATE_START | FUZZ_TRUNCATE_END;
 
-	/* MLDSA44_ED25519 keys are large and slow to fuzz */
-	if (test_is_fast() || sshkey_type_plain(k->type) == KEY_MLDSA44_ED25519)
+	/* MLDSA composite keys are large and slow to fuzz */
+	if (test_is_fast() ||
+	    sshkey_type_plain(k->type) == KEY_MLDSA44_ED25519 ||
+	    sshkey_type_plain(k->type) == KEY_MLDSA87_P384)
 		fuzzers &= ~FUZZ_2_BYTE_FLIP;
 	if (test_is_slow())
 		fuzzers |= FUZZ_2_BIT_FLIP;
@@ -253,6 +257,34 @@ sshkey_fuzz_tests(void)
 	TEST_DONE();
 
 #ifdef WITH_OPENSSL
+	/* MLDSA87-P384 are large and slow to fuzz */
+	TEST_START("fuzz MLDSA87-P384 private");
+	buf = load_file("mldsa87_p384_1");
+	fuzz = fuzz_begin(FUZZ_BASE64, sshbuf_mutable_ptr(buf),
+	    sshbuf_len(buf));
+	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
+	sshkey_free(k1);
+	sshbuf_free(buf);
+	ASSERT_PTR_NE(fuzzed = sshbuf_new(), NULL);
+	TEST_ONERROR(onerror, fuzz);
+	for(i = 0; !fuzz_done(fuzz); i++, fuzz_next(fuzz)) {
+		r = sshbuf_put(fuzzed, fuzz_ptr(fuzz), fuzz_len(fuzz));
+		ASSERT_INT_EQ(r, 0);
+		if (sshkey_parse_private_fileblob(fuzzed, "", &k1, NULL) == 0)
+			sshkey_free(k1);
+		sshbuf_reset(fuzzed);
+		if (test_is_fast() && i >= NUM_FAST_BASE64_TESTS)
+			break;
+		/* MLDSA87_P384 keys are large and slow to fuzz */
+		if (!test_is_slow() || i >= NUM_FAST_BASE64_TESTS)
+			break;
+	}
+	sshbuf_free(fuzzed);
+	fuzz_cleanup(fuzz);
+	TEST_DONE();
+#endif /* WITH_OPENSSL */
+
+#ifdef WITH_OPENSSL
 	TEST_START("fuzz RSA public");
 	buf = load_file("rsa_1");
 	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
@@ -313,6 +345,23 @@ sshkey_fuzz_tests(void)
 	TEST_DONE();
 
 #ifdef WITH_OPENSSL
+	TEST_START("fuzz MLDSA87-P384 public");
+	buf = load_file("mldsa87_p384_1");
+	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
+	sshbuf_free(buf);
+	public_fuzz(k1);
+	sshkey_free(k1);
+	TEST_DONE();
+
+	TEST_START("fuzz MLDSA87-P384 cert");
+	ASSERT_INT_EQ(sshkey_load_cert(
+	    test_data_file("mldsa87_p384_1"), &k1), 0);
+	public_fuzz(k1);
+	sshkey_free(k1);
+	TEST_DONE();
+#endif /* WITH_OPENSSL */
+
+#ifdef WITH_OPENSSL
 	TEST_START("fuzz RSA sig");
 	buf = load_file("rsa_1");
 	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
@@ -362,6 +411,16 @@ sshkey_fuzz_tests(void)
 	sig_fuzz(k1, NULL);
 	sshkey_free(k1);
 	TEST_DONE();
+
+#ifdef WITH_OPENSSL
+	TEST_START("fuzz MLDSA87-P384 sig");
+	buf = load_file("mldsa87_p384_1");
+	ASSERT_INT_EQ(sshkey_parse_private_fileblob(buf, "", &k1, NULL), 0);
+	sshbuf_free(buf);
+	sig_fuzz(k1, NULL);
+	sshkey_free(k1);
+	TEST_DONE();
+#endif /* WITH_OPENSSL */
 
 /* XXX fuzz decoded new-format blobs too */
 /* XXX fuzz XMSS too */

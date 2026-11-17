@@ -96,44 +96,47 @@ crypto_sign_mldsa44_ed25519_keygen_seeded(uint8_t pk[MLDSA44_ED25519_PK_SZ],
 	return ret;
 }
 
-static int
-construct_m_prime(uint8_t **m_primep, size_t *m_prime_lenp,
-    const uint8_t *msg, size_t msglen,
+int
+ssh_mldsa_composite_m_prime(uint8_t **m_primep, size_t *m_prime_lenp,
+    const char *label, const uint8_t *msg, size_t msglen,
     const uint8_t *ctx, size_t ctxlen)
 {
 	int r;
 	uint8_t hash[64];
-	struct sshbuf *m_prime;
+	struct sshbuf *m_prime = NULL;
 
 	*m_primep = NULL;
 	*m_prime_lenp = 0;
 
-	if (ctxlen > 255)
+	if (label == NULL || *label == '\0' || ctxlen > 255 ||
+	    (ctxlen > 0 && ctx == NULL) || (msglen > 0 && msg == NULL))
 		return SSH_ERR_INVALID_ARGUMENT;
 	if ((r = ssh_digest_memory(SSH_DIGEST_SHA512, msg, msglen,
 	    hash, sizeof(hash))) != 0)
 		return r;
-	if ((m_prime = sshbuf_new()) == NULL)
-		return SSH_ERR_ALLOC_FAIL;
+	if ((m_prime = sshbuf_new()) == NULL) {
+		r = SSH_ERR_ALLOC_FAIL;
+		goto out;
+	}
 	if ((r = sshbuf_put(m_prime, COMPOSITE_PREFIX,
 	    sizeof(COMPOSITE_PREFIX) - 1)) != 0 ||
-	    (r = sshbuf_put(m_prime, COMPOSITE_LABEL,
-	    sizeof(COMPOSITE_LABEL) - 1)) != 0 ||
+	    (r = sshbuf_put(m_prime, label, strlen(label))) != 0 ||
 	    (r = sshbuf_put_u8(m_prime, (uint8_t)ctxlen)) != 0 ||
 	    (r = sshbuf_put(m_prime, ctx, ctxlen)) != 0 ||
-	    (r = sshbuf_put(m_prime, hash, sizeof(hash))) != 0) {
-		sshbuf_free(m_prime);
-		return r;
-	}
+	    (r = sshbuf_put(m_prime, hash, sizeof(hash))) != 0)
+		goto out;
 	if ((*m_primep = malloc(sshbuf_len(m_prime))) == NULL) {
-		sshbuf_free(m_prime);
-		return SSH_ERR_ALLOC_FAIL;
+		r = SSH_ERR_ALLOC_FAIL;
+		goto out;
 	}
 	memcpy(*m_primep, sshbuf_ptr(m_prime), sshbuf_len(m_prime));
 	*m_prime_lenp = sshbuf_len(m_prime);
 	/* success */
+	r = 0;
+ out:
+	explicit_bzero(hash, sizeof(hash));
 	sshbuf_free(m_prime);
-	return 0;
+	return r;
 }
 
 int
@@ -152,8 +155,8 @@ crypto_sign_mldsa44_ed25519_sign(uint8_t sig[MLDSA44_ED25519_SIG_SZ],
 	unsigned long long smlen;
 	int r = -1;
 
-	if (construct_m_prime(&m_prime, &m_prime_len, msg, msglen,
-	    ctx, ctxlen) != 0)
+	if (ssh_mldsa_composite_m_prime(&m_prime, &m_prime_len,
+	    COMPOSITE_LABEL, msg, msglen, ctx, ctxlen) != 0)
 		return -1;
 
 	/* Expand ML-DSA key from seed */
@@ -197,8 +200,8 @@ crypto_sign_mldsa44_ed25519_verify(const uint8_t sig[MLDSA44_ED25519_SIG_SZ],
 	size_t m_prime_len = 0;
 	int r = -1;
 
-	if (construct_m_prime(&m_prime, &m_prime_len, msg, msglen,
-	    ctx, ctxlen) != 0)
+	if (ssh_mldsa_composite_m_prime(&m_prime, &m_prime_len,
+	    COMPOSITE_LABEL, msg, msglen, ctx, ctxlen) != 0)
 		return -1;
 
 	/* Verify ML-DSA */

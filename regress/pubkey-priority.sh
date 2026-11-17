@@ -108,6 +108,7 @@ $HOME/.ssh/id_ecdsa_sk ECDSA-SK
 $HOME/.ssh/id_ed25519 ED25519
 $HOME/.ssh/id_ed25519_sk 
 $HOME/.ssh/id_mldsa44_ed25519 
+$HOME/.ssh/id_mldsa87_p384 
 EOF
 
 awk '{print $1 " " $2}' <  $OBJ/prio_implicit.out > $OBJ/prio_implicit.got

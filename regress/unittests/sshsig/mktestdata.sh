@@ -17,9 +17,9 @@ else
 fi
 
 rm -f signed-data namespace
-rm -f rsa ecdsa ed25519 ecdsa_sk ed25519_sk mldsa44-ed25519
+rm -f rsa ecdsa ed25519 ecdsa_sk ed25519_sk mldsa44-ed25519 mldsa87-p384
 rm -f rsa.sig ecdsa.sig ed25519.sig ecdsa_sk.sig ed25519_sk.sig
-rm -f mldsa44-ed25519.sig
+rm -f mldsa44-ed25519.sig mldsa87-p384.sig
 
 printf "This is a test, this is only a test" > signed-data
 printf "$NAMESPACE" > namespace
@@ -29,6 +29,8 @@ ssh-keygen -t ecdsa -C "ECDSA test" -N "" -f ecdsa -m PEM
 ssh-keygen -t ed25519 -C "ED25519 test key" -N "" -f ed25519
 ssh-keygen -t mldsa44-ed25519 -C "MLDSA44-ED25519 test key" \
     -N "" -f mldsa44-ed25519
+ssh-keygen -t mldsa87-p384 -C "MLDSA87-P384 test key" \
+    -N "" -f mldsa87-p384
 ssh-keygen -w "$SK_DUMMY" -t ecdsa-sk -C "ECDSA-SK test key" \
     -N "" -f ecdsa_sk
 ssh-keygen -w "$SK_DUMMY" -t ed25519-sk -C "ED25519-SK test key" \
@@ -39,6 +41,8 @@ ssh-keygen -Y sign -f ecdsa -n $NAMESPACE - < signed-data > ecdsa.sig
 ssh-keygen -Y sign -f ed25519 -n $NAMESPACE - < signed-data > ed25519.sig
 ssh-keygen -Y sign -f mldsa44-ed25519 -n $NAMESPACE - \
 	< signed-data > mldsa44-ed25519.sig
+ssh-keygen -Y sign -f mldsa87-p384 -n $NAMESPACE - \
+	< signed-data > mldsa87-p384.sig
 ssh-keygen -w "$SK_DUMMY" \
 	-Y sign -f ecdsa_sk -n $NAMESPACE - < signed-data > ecdsa_sk.sig
 ssh-keygen -w "$SK_DUMMY" \

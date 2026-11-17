@@ -116,6 +116,12 @@ tests(void)
 	check_sig("mldsa44-ed25519.pub", "mldsa44-ed25519.sig", msg, namespace);
 	TEST_DONE();
 
+#ifdef WITH_OPENSSL
+	TEST_START("check MLDSA87-P384 signature");
+	check_sig("mldsa87-p384.pub", "mldsa87-p384.sig", msg, namespace);
+	TEST_DONE();
+#endif
+
 #ifdef ENABLE_SK
 #if defined(WITH_OPENSSL)
 	TEST_START("check ECDSA-SK signature");
